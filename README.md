@@ -37,6 +37,8 @@ pip install -r requirements.txt
 | student1 | student123 | 學生   |
 | student2 | student123 | 學生   |
 
+如需喺示範環境啟動時重設以上三個示範帳號密碼，設定 `RESET_SEED_PASSWORDS=1`；其他學生帳號同交卷記錄唔會被刪除或修改。
+
 ## 交卷檔案位置
 
 ```

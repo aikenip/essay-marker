@@ -138,6 +138,21 @@ def init_db() -> None:
                     (username, generate_password_hash(password), role, now_iso()),
                 )
 
+        # The demo teacher account must remain a teacher even if an older
+        # database was initialized with an incorrect role.
+        conn.execute(
+            "UPDATE users SET role = 'teacher' WHERE username = 'teacher'"
+        )
+
+        # Opt-in reset for demo deployments. This only touches the seeded
+        # accounts and leaves all other users and submissions unchanged.
+        if os.environ.get("RESET_SEED_PASSWORDS") == "1":
+            for username, password, _role in SEED_USERS:
+                conn.execute(
+                    "UPDATE users SET password_hash = ? WHERE username = ?",
+                    (generate_password_hash(password), username),
+                )
+
 
 def get_user_by_username(username: str) -> Optional[sqlite3.Row]:
     with get_db() as conn:
