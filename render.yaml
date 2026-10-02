@@ -8,7 +8,7 @@ services:
     startCommand: gunicorn app:app --bind 0.0.0.0:$PORT --workers 1 --threads 4 --timeout 120
     disk:
       name: essay-marker-data
-      mountPath: /var/data
+      mountPath: /opt/render/project/src/data
       sizeGB: 1
     envVars:
       - key: FLASK_SECRET_KEY
@@ -16,8 +16,8 @@ services:
       - key: PYTHON_VERSION
         value: "3.12.8"
       - key: DATA_DIR
-        value: /var/data
+        value: /opt/render/project/src/data
       - key: UPLOAD_DIR
-        value: /var/data/uploads
+        value: /opt/render/project/src/data/uploads
       - key: RESET_SEED_PASSWORDS
         value: "0"
