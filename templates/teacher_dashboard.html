@@ -3,7 +3,7 @@
 {% block content %}
 <div class="card">
   <h1>老師主頁 · 交卷匣</h1>
-  <p class="muted">查看學生交卷、開啟圖片，再喺詳情頁貼上批改，或請 Grok 助手用 CLI 寫回結果。</p>
+  <p class="muted">查看學生交卷（英文／中文）、開啟圖片，再喺詳情頁貼上批改，或請 Grok 助手用 CLI 寫回結果。</p>
   <div class="btn-row">
     <a class="btn" href="{{ url_for('upload_new') }}">＋ 示範交卷</a>
     <a class="btn btn-secondary" href="{{ url_for('teacher_students') }}">帳號管理</a>
@@ -27,6 +27,7 @@
       <tr>
         <th>#</th>
         <th>學生</th>
+        <th>科目</th>
         <th>時間</th>
         <th>備註</th>
         <th>狀態</th>
@@ -38,6 +39,7 @@
       <tr>
         <td>{{ s.id }}</td>
         <td>{{ s.username }}</td>
+        <td><span class="badge badge-subject-{{ get_subject(s) }}">{{ subject_label(get_subject(s)) }}</span></td>
         <td>{{ s.created_at }}</td>
         <td>{{ s.student_note or '—' }}</td>
         <td><span class="badge badge-{{ s.status }}">{{ status_label(s.status) }}</span></td>

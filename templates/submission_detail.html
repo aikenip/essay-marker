@@ -9,6 +9,10 @@
       <div class="value">{{ submission.username }}</div>
     </div>
     <div class="meta-item">
+      <div class="label">科目</div>
+      <div class="value"><span class="badge badge-subject-{{ get_subject(submission) }}">{{ subject_label(get_subject(submission)) }}</span></div>
+    </div>
+    <div class="meta-item">
       <div class="label">提交時間</div>
       <div class="value">{{ submission.created_at }}</div>
     </div>

@@ -1,4 +1,4 @@
-"""DSE English essay upload inbox (marking done by teacher's Grok assistant)."""
+"""DSE English / Chinese essay upload inbox (marking done by teacher's Grok assistant)."""
 
 from __future__ import annotations
 
@@ -8,10 +8,13 @@ import os
 from functools import wraps
 from pathlib import Path
 
+import hmac
+
 from flask import (
     Flask,
     abort,
     flash,
+    jsonify,
     redirect,
     render_template,
     request,
@@ -201,10 +204,15 @@ def upload_new():
     user = current_user()
     if request.method == "POST":
         student_note = (request.form.get("student_note") or "").strip()
+        subject = db.normalize_subject(request.form.get("subject"))
         question_files = request.files.getlist("question_images")
         essay_files = request.files.getlist("essay_images")
 
         # Validate before creating DB row
+        raw_subject = (request.form.get("subject") or "").strip().lower()
+        if raw_subject not in db.VALID_SUBJECTS:
+            flash("請選擇科目：英文作文或中文作文。", "error")
+            return render_template("upload_new.html", user=user)
         q_ok = any(
             f and f.filename and allowed_file(f.filename) for f in question_files
         )
@@ -223,6 +231,7 @@ def upload_new():
             student_note=student_note,
             question_paths=[],
             essay_paths=[],
+            subject=subject,
         )
         q_saved = save_uploads(question_files, sid, "question")
         e_saved = save_uploads(essay_files, sid, "essay")
@@ -364,11 +373,109 @@ def teacher_students():
     )
 
 
+
+
+def _teacher_api_key() -> str:
+    return (os.environ.get("TEACHER_API_KEY") or "").strip()
+
+
+def teacher_api_required(view):
+    """Require X-Teacher-Key header matching TEACHER_API_KEY (constant-time)."""
+
+    @wraps(view)
+    def wrapped(*args, **kwargs):
+        expected = _teacher_api_key()
+        if not expected:
+            return jsonify({"error": "teacher API not configured"}), 503
+        provided = request.headers.get("X-Teacher-Key") or ""
+        if not hmac.compare_digest(provided, expected):
+            return jsonify({"error": "unauthorized"}), 401
+        return view(*args, **kwargs)
+
+    return wrapped
+
+
+def _basenames(paths: list[str]) -> list[str]:
+    return [Path(p).name for p in paths]
+
+
+def submission_api_dict(row, *, include_marking: bool = False) -> dict:
+    """Serialize a submission row for teacher API JSON responses."""
+    data = {
+        "id": row["id"],
+        "username": row["username"],
+        "student_note": row["student_note"] or "",
+        "subject": db.get_subject(row),
+        "subject_label": db.subject_label(db.get_subject(row)),
+        "status": row["status"],
+        "created_at": row["created_at"],
+        "question_files": _basenames(db.parse_paths(row, "question_paths")),
+        "essay_files": _basenames(db.parse_paths(row, "essay_paths")),
+    }
+    if include_marking:
+        data["marking_text"] = row["marking_text"] or ""
+    return data
+
+
+def _submission_allowed_filenames(row) -> set[str]:
+    names = set(_basenames(db.parse_paths(row, "question_paths")))
+    names.update(_basenames(db.parse_paths(row, "essay_paths")))
+    return names
+
+
+@app.route("/api/pending")
+@teacher_api_required
+def api_pending():
+    rows = db.list_pending_submissions()
+    return jsonify({"submissions": [submission_api_dict(r) for r in rows]})
+
+
+@app.route("/api/submission/<int:submission_id>")
+@teacher_api_required
+def api_submission_detail(submission_id: int):
+    row = db.get_submission(submission_id)
+    if not row:
+        return jsonify({"error": "not found"}), 404
+    return jsonify(submission_api_dict(row, include_marking=True))
+
+
+@app.route("/api/submission/<int:submission_id>/file/<path:filename>")
+@teacher_api_required
+def api_submission_file(submission_id: int, filename: str):
+    row = db.get_submission(submission_id)
+    if not row:
+        return jsonify({"error": "not found"}), 404
+    safe_name = Path(filename).name
+    if safe_name not in _submission_allowed_filenames(row):
+        return jsonify({"error": "file not allowed"}), 404
+    folder = UPLOAD_DIR / str(submission_id)
+    if not (folder / safe_name).is_file():
+        return jsonify({"error": "file not found"}), 404
+    return send_from_directory(folder, safe_name)
+
+
+@app.route("/api/submission/<int:submission_id>/marking", methods=["POST"])
+@teacher_api_required
+def api_save_marking(submission_id: int):
+    row = db.get_submission(submission_id)
+    if not row:
+        return jsonify({"error": "not found"}), 404
+    payload = request.get_json(silent=True) or {}
+    marking_text = payload.get("marking_text")
+    if marking_text is None:
+        return jsonify({"error": "marking_text required"}), 400
+    if not db.save_marking(submission_id, marking_text):
+        return jsonify({"error": "marking_text cannot be empty"}), 400
+    return jsonify({"ok": True})
+
+
 @app.context_processor
 def inject_globals():
     return {
-        "app_title": "DSE 英文作文交卷",
+        "app_title": "DSE 作文交卷",
         "status_label": db.status_label,
+        "subject_label": db.subject_label,
+        "get_subject": db.get_subject,
     }
 
 

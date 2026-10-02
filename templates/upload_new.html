@@ -3,9 +3,21 @@
 {% block content %}
 <div class="card">
   <h1>交卷上傳</h1>
-  <p class="muted">請分開揀相：上面只放<strong>試卷題目</strong>，下面只放<strong>學生作文</strong>。提交前可用預覽核對。</p>
+  <p class="muted">請先揀科目，再分開揀相：上面只放<strong>試卷題目</strong>，下面只放<strong>學生作文</strong>。提交前可用預覽核對。</p>
 
   <form method="post" enctype="multipart/form-data" id="upload-form">
+    <fieldset class="subject-fieldset">
+      <legend>科目（必選）</legend>
+      <label class="radio-row">
+        <input type="radio" name="subject" value="english" required checked>
+        <span>英文作文 <span class="muted">（DSE English Paper 2）</span></span>
+      </label>
+      <label class="radio-row">
+        <input type="radio" name="subject" value="chinese" required>
+        <span>中文作文 <span class="muted">（DSE 中國語文寫作卷）</span></span>
+      </label>
+    </fieldset>
+
     <label for="student_note">備註（可選：姓名／班別／題號）</label>
     <input type="text" id="student_note" name="student_note" placeholder="例如 3A Chan Tai Man · Q1 letter">
 

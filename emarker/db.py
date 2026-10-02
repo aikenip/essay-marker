@@ -33,6 +33,13 @@ STATUS_LABELS = {
     "marked": "已批改",
 }
 
+SUBJECT_LABELS = {
+    "english": "英文",
+    "chinese": "中文",
+}
+
+VALID_SUBJECTS = frozenset({"english", "chinese"})
+
 
 def _connect() -> sqlite3.Connection:
     DB_PATH.parent.mkdir(parents=True, exist_ok=True)
@@ -80,6 +87,7 @@ def init_db() -> None:
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 user_id INTEGER NOT NULL,
                 student_note TEXT,
+                subject TEXT NOT NULL DEFAULT 'english',
                 question_paths TEXT NOT NULL DEFAULT '[]',
                 essay_paths TEXT NOT NULL DEFAULT '[]',
                 status TEXT NOT NULL DEFAULT 'pending',
@@ -97,6 +105,10 @@ def init_db() -> None:
             conn.execute("ALTER TABLE submissions ADD COLUMN marking_text TEXT")
         if "marked_at" not in cols:
             conn.execute("ALTER TABLE submissions ADD COLUMN marked_at TEXT")
+        if "subject" not in cols:
+            conn.execute(
+                "ALTER TABLE submissions ADD COLUMN subject TEXT NOT NULL DEFAULT 'english'"
+            )
 
         # Copy legacy result_markdown → marking_text if present and empty.
         cols = _column_names(conn, "submissions")
@@ -261,22 +273,31 @@ def list_students() -> list[sqlite3.Row]:
         ).fetchall()
 
 
+def normalize_subject(subject: Optional[str]) -> str:
+    """Return 'english' or 'chinese'; default english."""
+    s = (subject or "").strip().lower()
+    return s if s in VALID_SUBJECTS else "english"
+
+
 def create_submission(
     user_id: int,
     student_note: str,
     question_paths: Optional[list[str]] = None,
     essay_paths: Optional[list[str]] = None,
+    subject: str = "english",
 ) -> int:
+    subject = normalize_subject(subject)
     with get_db() as conn:
         cur = conn.execute(
             """
             INSERT INTO submissions
-            (user_id, student_note, question_paths, essay_paths, status, created_at)
-            VALUES (?, ?, ?, ?, 'pending', ?)
+            (user_id, student_note, subject, question_paths, essay_paths, status, created_at)
+            VALUES (?, ?, ?, ?, ?, 'pending', ?)
             """,
             (
                 user_id,
                 student_note,
+                subject,
                 json.dumps(question_paths or []),
                 json.dumps(essay_paths or []),
                 now_iso(),
@@ -390,6 +411,20 @@ def status_label(status: str) -> str:
     return STATUS_LABELS.get(status, status or "—")
 
 
+def subject_label(subject: Optional[str]) -> str:
+    s = normalize_subject(subject)
+    return SUBJECT_LABELS.get(s, "英文")
+
+
+def get_subject(row: sqlite3.Row) -> str:
+    """Safe subject from a submission row (legacy rows → english)."""
+    try:
+        raw = row["subject"]
+    except (KeyError, IndexError):
+        return "english"
+    return normalize_subject(raw)
+
+
 def parse_paths(row: sqlite3.Row, key: str) -> list[str]:
     raw = row[key] if key in row.keys() else "[]"
     try:
@@ -403,3 +438,19 @@ def row_to_dict(row: Optional[sqlite3.Row]) -> Optional[dict[str, Any]]:
     if row is None:
         return None
     return dict(row)
+
+
+def list_pending_submissions(limit: int = 200) -> list[sqlite3.Row]:
+    """Return submissions with status=pending, newest first."""
+    with get_db() as conn:
+        return conn.execute(
+            """
+            SELECT s.*, u.username
+            FROM submissions s
+            JOIN users u ON u.id = s.user_id
+            WHERE s.status = 'pending'
+            ORDER BY s.id DESC
+            LIMIT ?
+            """,
+            (limit,),
+        ).fetchall()

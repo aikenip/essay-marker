@@ -297,3 +297,31 @@ footer {
   color: #fff;
 }
 .btn-danger:hover { background: #b91c1c; }
+
+.badge-subject-english { background: #eff6ff; color: #1d4ed8; }
+.badge-subject-chinese { background: #fdf2f8; color: #be185d; }
+
+.subject-fieldset {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.85rem 1rem 1rem;
+  margin: 0.5rem 0 0.25rem;
+  background: #f8fafc;
+}
+.subject-fieldset legend {
+  font-weight: 600;
+  padding: 0 0.35rem;
+  font-size: 0.95rem;
+}
+.radio-row {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  font-weight: 500;
+  margin: 0.45rem 0;
+  cursor: pointer;
+}
+.radio-row input[type="radio"] {
+  width: auto;
+  margin: 0;
+}

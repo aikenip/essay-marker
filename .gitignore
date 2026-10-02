@@ -7,3 +7,4 @@ data/**
 !data/.gitkeep
 .env
 *.db
+.teacher_api_key

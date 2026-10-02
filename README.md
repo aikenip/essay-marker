@@ -1,6 +1,7 @@
-# DSE 英文作文交卷匣（Essay Marker）
+# DSE 作文交卷匣（Essay Marker）
 
 香港中學老師用的簡單網站：**只負責學生登入同交卷（上傳題目／作文圖片）**。  
+支援 **英文作文**（DSE English Paper 2）同 **中文作文**（DSE 中國語文寫作卷）；交卷時揀科目。  
 批改唔會喺網站呼叫 API，而係由老師的 **Grok 助手**（或老師喺網頁貼上批改）完成。
 
 > 本站只負責交卷；批改由老師的 Grok 助手處理。
@@ -8,7 +9,7 @@
 ## 功能
 
 - Session 登入（老師／學生）
-- 學生上傳題目圖 + 作文圖 → 狀態「待批改」
+- 學生揀科目（英文／中文）後上傳題目圖 + 作文圖 → 狀態「待批改」
 - 老師查看所有交卷同圖片縮圖
 - 老師可喺詳情頁貼上批改；或用 CLI 寫回（畀 Bot 用）
 - SQLite 儲存用戶同交卷歷史
@@ -75,7 +76,9 @@ essay-marker/
   app.py
   emarker/
     db.py
-    prompt.py          # 批改結構參考（畀助手用，網站唔再呼叫 LLM）
+    prompt.py          # 英文／中文批改結構參考（畀助手用，網站唔再呼叫 LLM）
+  docs/
+    AUTO_MARK_CHINESE.md  # 自動批改：中英差異（畀助手 routine）
   scripts/save_marking.py
   templates/
   static/style.css
