@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block title %}老師主頁 · {{ app_title }}{% endblock %}
+{% block content %}
+<div class="card">
+  <h1>老師主頁 · 交卷匣</h1>
+  <p class="muted">查看學生交卷、開啟圖片，再喺詳情頁貼上批改，或請 Grok 助手用 CLI 寫回結果。</p>
+  <div class="btn-row">
+    <a class="btn" href="{{ url_for('upload_new') }}">＋ 示範交卷</a>
+    <a class="btn btn-secondary" href="{{ url_for('teacher_students') }}">帳號管理</a>
+  </div>
+</div>
+
+<div class="card">
+  <h2>學生列表（{{ students|length }}）</h2>
+  {% if students %}
+  <p class="muted">{% for st in students %}{{ st.username }}{% if not loop.last %}、{% endif %}{% endfor %}</p>
+  {% else %}
+  <p class="muted">未有學生帳號。</p>
+  {% endif %}
+</div>
+
+<div class="card">
+  <h2>全部交卷</h2>
+  {% if submissions %}
+  <table>
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>學生</th>
+        <th>時間</th>
+        <th>備註</th>
+        <th>狀態</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for s in submissions %}
+      <tr>
+        <td>{{ s.id }}</td>
+        <td>{{ s.username }}</td>
+        <td>{{ s.created_at }}</td>
+        <td>{{ s.student_note or '—' }}</td>
+        <td><span class="badge badge-{{ s.status }}">{{ status_label(s.status) }}</span></td>
+        <td><a href="{{ url_for('submission_detail', submission_id=s.id) }}">打開</a></td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="muted">未有交卷記錄。</p>
+  {% endif %}
+</div>
+{% endblock %}

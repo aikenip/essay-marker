@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+{% block title %}交卷 #{{ submission.id }} · {{ app_title }}{% endblock %}
+{% block content %}
+<div class="card">
+  <h1>交卷 #{{ submission.id }}</h1>
+  <div class="meta-grid">
+    <div class="meta-item">
+      <div class="label">學生</div>
+      <div class="value">{{ submission.username }}</div>
+    </div>
+    <div class="meta-item">
+      <div class="label">提交時間</div>
+      <div class="value">{{ submission.created_at }}</div>
+    </div>
+    <div class="meta-item">
+      <div class="label">狀態</div>
+      <div class="value"><span class="badge badge-{{ submission.status }}">{{ status_label(submission.status) }}</span></div>
+    </div>
+    <div class="meta-item">
+      <div class="label">批改時間</div>
+      <div class="value">{{ submission.marked_at or '—' }}</div>
+    </div>
+  </div>
+  {% if submission.student_note %}
+  <p class="muted">備註：{{ submission.student_note }}</p>
+  {% endif %}
+  <div class="btn-row">
+    <a class="btn btn-secondary" href="{{ url_for('dashboard') }}">返回主頁</a>
+    <a class="btn" href="{{ url_for('upload_new') }}">再交一份</a>
+    {% if user.role == 'teacher' %}
+    <form method="post" style="display:inline" onsubmit="return confirm('確定刪除呢份交卷？圖片同批改都會一併刪除，唔可以還原。');">
+      <input type="hidden" name="action" value="delete">
+      <button class="btn btn-danger" type="submit">刪除呢份交卷</button>
+    </form>
+    {% endif %}
+  </div>
+</div>
+
+<div class="card">
+  <h2>題目圖片</h2>
+  {% if question_images %}
+  <div class="thumb-grid">
+    {% for img in question_images %}
+    <a class="thumb" href="{{ img.url }}" target="_blank" rel="noopener">
+      <img src="{{ img.url }}" alt="{{ img.name }}" loading="lazy">
+      <span>{{ img.name }}</span>
+    </a>
+    {% endfor %}
+  </div>
+  {% else %}
+  <p class="muted">無題目圖片。</p>
+  {% endif %}
+</div>
+
+<div class="card">
+  <h2>作文圖片</h2>
+  {% if essay_images %}
+  <div class="thumb-grid">
+    {% for img in essay_images %}
+    <a class="thumb" href="{{ img.url }}" target="_blank" rel="noopener">
+      <img src="{{ img.url }}" alt="{{ img.name }}" loading="lazy">
+      <span>{{ img.name }}</span>
+    </a>
+    {% endfor %}
+  </div>
+  {% else %}
+  <p class="muted">無作文圖片。</p>
+  {% endif %}
+</div>
+
+{% if submission.status == 'marked' and submission.marking_text %}
+<div class="card">
+  <h2>批改結果</h2>
+  <div id="result-md" class="markdown-body"></div>
+  <noscript>
+    <pre style="white-space:pre-wrap">{{ submission.marking_text }}</pre>
+  </noscript>
+</div>
+{% elif submission.status == 'pending' %}
+<div class="card">
+  <h2>待批改</h2>
+  <p class="muted">已收到交卷。老師可用下方表單貼上批改，或請 Grok 助手用 CLI 寫回結果。</p>
+</div>
+{% endif %}
+
+{% if user.role == 'teacher' %}
+<div class="card">
+  <h2>寫入／更新批改</h2>
+  <p class="muted">可貼上 Markdown 或純文字。儲存後狀態會變成「已批改」。</p>
+  <form method="post">
+    <label for="marking_text">批改內容</label>
+    <textarea id="marking_text" name="marking_text" rows="16" placeholder="# 總評&#10;…">{{ submission.marking_text or '' }}</textarea>
+    <div class="btn-row">
+      <button class="btn" type="submit">儲存批改</button>
+    </div>
+  </form>
+  <p class="hint">CLI（畀 Grok 助手用）：<code>python scripts/save_marking.py --id {{ submission.id }} --file marking.md</code></p>
+</div>
+{% endif %}
+{% endblock %}
+{% block scripts %}
+{% if submission.status == 'marked' and submission.marking_text %}
+<script src="https://cdn.jsdelivr.net/npm/marked@15.0.7/marked.min.js"></script>
+<script>
+(function () {
+  const raw = {{ submission.marking_text | tojson }};
+  const el = document.getElementById('result-md');
+  if (el && window.marked) {
+    el.innerHTML = marked.parse(raw);
+  } else if (el) {
+    el.textContent = raw;
+  }
+})();
+</script>
+{% endif %}
+{% endblock %}

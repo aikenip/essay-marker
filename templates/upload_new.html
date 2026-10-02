@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% block title %}交卷 · {{ app_title }}{% endblock %}
+{% block content %}
+<div class="card">
+  <h1>交卷上傳</h1>
+  <p class="muted">請分開揀相：上面只放<strong>試卷題目</strong>，下面只放<strong>學生作文</strong>。提交前可用預覽核對。</p>
+
+  <form method="post" enctype="multipart/form-data" id="upload-form">
+    <label for="student_note">備註（可選：姓名／班別／題號）</label>
+    <input type="text" id="student_note" name="student_note" placeholder="例如 3A Chan Tai Man · Q1 letter">
+
+    <label for="question_images">題目圖片（可多張）</label>
+    <input type="file" id="question_images" name="question_images" accept="image/*" multiple required>
+    <p class="hint">只上試卷／寫作要求；唔好放作文答卷。</p>
+    <div id="q-preview" class="preview-row" aria-live="polite"></div>
+
+    <label for="essay_images">作文圖片（可多張，按頁順序）</label>
+    <input type="file" id="essay_images" name="essay_images" accept="image/*" multiple required>
+    <p class="hint">只上學生手寫答卷；建議清晰、按頁順序一次揀晒。</p>
+    <div id="e-preview" class="preview-row" aria-live="polite"></div>
+
+    <p id="dup-warn" class="flash error" style="display:none">兩邊揀咗相同檔名／相同相。請重新分開揀題目同作文。</p>
+
+    <div class="btn-row">
+      <button class="btn" type="submit">提交交卷</button>
+      <a class="btn btn-secondary" href="{{ url_for('dashboard') }}">取消</a>
+    </div>
+  </form>
+</div>
+<script>
+(function () {
+  function renderPreview(input, mount) {
+    mount.innerHTML = "";
+    const files = Array.from(input.files || []);
+    files.forEach(function (file) {
+      const box = document.createElement("div");
+      box.className = "preview-item";
+      const img = document.createElement("img");
+      img.alt = file.name;
+      img.src = URL.createObjectURL(file);
+      const cap = document.createElement("span");
+      cap.textContent = file.name;
+      box.appendChild(img);
+      box.appendChild(cap);
+      mount.appendChild(box);
+    });
+  }
+  function sameSelection(a, b) {
+    const fa = Array.from(a.files || []);
+    const fb = Array.from(b.files || []);
+    if (!fa.length || !fb.length) return false;
+    const key = function (f) { return f.name + ":" + f.size + ":" + f.lastModified; };
+    const setA = new Set(fa.map(key));
+    return fb.some(function (f) { return setA.has(key(f)); });
+  }
+  const q = document.getElementById("question_images");
+  const e = document.getElementById("essay_images");
+  const qPrev = document.getElementById("q-preview");
+  const ePrev = document.getElementById("e-preview");
+  const warn = document.getElementById("dup-warn");
+  function refresh() {
+    renderPreview(q, qPrev);
+    renderPreview(e, ePrev);
+    warn.style.display = sameSelection(q, e) ? "block" : "none";
+  }
+  q.addEventListener("change", refresh);
+  e.addEventListener("change", refresh);
+  document.getElementById("upload-form").addEventListener("submit", function (ev) {
+    if (sameSelection(q, e)) {
+      ev.preventDefault();
+      warn.style.display = "block";
+      alert("題目同作文似乎揀咗相同嘅相。請分開重新揀，再用預覽確認。");
+    }
+  });
+})();
+</script>
+{% endblock %}

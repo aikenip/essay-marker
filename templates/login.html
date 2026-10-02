@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}登入 · {{ app_title }}{% endblock %}
+{% block content %}
+<div class="login-wrap">
+  <div class="card">
+    <h1>登入</h1>
+    <p class="muted">用老師發放嘅用戶名同密碼登入，上傳題目同作文圖片。</p>
+    {% if error %}
+    <div class="flash error">{{ error }}</div>
+    {% endif %}
+    <form method="post">
+      <label for="username">用戶名</label>
+      <input type="text" id="username" name="username" autocomplete="username" required autofocus>
+
+      <label for="password">密碼</label>
+      <input type="password" id="password" name="password" autocomplete="current-password" required>
+
+      <div class="btn-row">
+        <button class="btn btn-block" type="submit">登入</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

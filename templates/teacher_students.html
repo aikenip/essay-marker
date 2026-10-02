@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% block title %}帳號管理 · {{ app_title }}{% endblock %}
+{% block content %}
+<div class="card">
+  <h1>帳號管理</h1>
+  <p class="muted">新增學生、修改學生登入資料，或更改自己嘅老師用戶名／密碼。</p>
+  {% if message %}<div class="flash ok">{{ message }}</div>{% endif %}
+  {% if error %}<div class="flash error">{{ error }}</div>{% endif %}
+</div>
+
+<div class="card">
+  <h2>我的老師帳號</h2>
+  <form method="post" class="edit-form">
+    <input type="hidden" name="action" value="edit">
+    <input type="hidden" name="user_id" value="{{ user.id }}">
+    <label for="teacher_username">用戶名</label>
+    <input type="text" id="teacher_username" name="username" value="{{ user.username }}" required autocomplete="username">
+
+    <label for="teacher_password">新密碼（留空＝唔改）</label>
+    <input type="password" id="teacher_password" name="password" placeholder="至少 4 個字元" autocomplete="new-password">
+
+    <div class="btn-row">
+      <button class="btn" type="submit">儲存我的帳號</button>
+    </div>
+  </form>
+</div>
+
+<div class="card">
+  <h2>新增學生帳號</h2>
+  <form method="post">
+    <input type="hidden" name="action" value="create">
+    <label for="new_username">用戶名</label>
+    <input type="text" id="new_username" name="username" required placeholder="例如 student3" autocomplete="off">
+
+    <label for="new_password">密碼</label>
+    <input type="text" id="new_password" name="password" required placeholder="至少 4 個字元" autocomplete="off">
+
+    <div class="btn-row">
+      <button class="btn" type="submit">新增學生</button>
+    </div>
+  </form>
+</div>
+
+<div class="card">
+  <h2>現有學生（可改用戶名／密碼）</h2>
+  {% if students %}
+  {% for s in students %}
+  <form method="post" class="edit-form student-edit">
+    <input type="hidden" name="action" value="edit">
+    <input type="hidden" name="user_id" value="{{ s.id }}">
+    <div class="edit-row">
+      <div>
+        <label for="stu_user_{{ s.id }}">用戶名</label>
+        <input type="text" id="stu_user_{{ s.id }}" name="username" value="{{ s.username }}" required>
+      </div>
+      <div>
+        <label for="stu_pass_{{ s.id }}">新密碼（留空＝唔改）</label>
+        <input type="password" id="stu_pass_{{ s.id }}" name="password" placeholder="至少 4 個字元" autocomplete="new-password">
+      </div>
+      <div class="edit-actions">
+        <button class="btn" type="submit">儲存</button>
+        <p class="hint">建立：{{ s.created_at }}</p>
+      </div>
+    </div>
+  </form>
+  {% endfor %}
+  {% else %}
+  <p class="muted">未有學生。</p>
+  {% endif %}
+  <div class="btn-row" style="margin-top:1rem">
+    <a class="btn btn-secondary" href="{{ url_for('dashboard') }}">返回主頁</a>
+  </div>
+</div>
+{% endblock %}

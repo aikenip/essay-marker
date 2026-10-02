@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}我的交卷 · {{ app_title }}{% endblock %}
+{% block content %}
+<div class="card">
+  <h1>你好，{{ user.username }}</h1>
+  <p class="muted">喺呢度上傳作文。批改唔會喺網站即時完成，而係由老師嘅 Grok 助手處理。</p>
+  <div class="btn-row">
+    <a class="btn" href="{{ url_for('upload_new') }}">＋ 新交卷</a>
+  </div>
+</div>
+
+<div class="card">
+  <h2>我的提交</h2>
+  {% if submissions %}
+  <table>
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>時間</th>
+        <th>備註</th>
+        <th>狀態</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for s in submissions %}
+      <tr>
+        <td>{{ s.id }}</td>
+        <td>{{ s.created_at }}</td>
+        <td>{{ s.student_note or '—' }}</td>
+        <td><span class="badge badge-{{ s.status }}">{{ status_label(s.status) }}</span></td>
+        <td><a href="{{ url_for('submission_detail', submission_id=s.id) }}">查看</a></td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="muted">未有交卷。撳上面「新交卷」開始。</p>
+  {% endif %}
+</div>
+{% endblock %}
